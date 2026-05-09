@@ -41,7 +41,7 @@ Billify is an intelligent, hardware-free POS and digital billing platform. It se
    npm run dev
    ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the application.
+Open the application in your browser to see the result.
 
 ## Tech Stack
 
