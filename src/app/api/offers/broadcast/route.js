@@ -51,7 +51,7 @@ export async function POST(request) {
           const result = await sendOfferWithImage({ 
             phone: recipient.phone, 
             offer, 
-            shopName: offer.shop.name 
+            storeName: offer.shop.name 
           });
           if (result.success) {
             await prisma.offerRecipient.update({
