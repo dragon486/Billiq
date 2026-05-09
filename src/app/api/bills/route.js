@@ -165,7 +165,7 @@ export async function POST(request) {
       });
     });
 
-    // Audit Log
+    // Audit Log — use newBill.invoiceNum (safe outside transaction scope)
     await prisma.auditLog.create({
       data: {
         shopId,
@@ -173,7 +173,7 @@ export async function POST(request) {
         entityType: "Bill",
         entityId: newBill.id,
         userId: session.user.id,
-        description: `Generated invoice ${invoiceNum} for ₹${total}`
+        description: `Generated invoice ${newBill.invoiceNum} for ₹${total}`
       }
     });
 

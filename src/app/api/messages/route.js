@@ -1,23 +1,26 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const shopId = searchParams.get('shopId');
-
-  if (!shopId) {
-    return NextResponse.json({ error: "shopId is required" }, { status: 400 });
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "shop") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Always scope to the authenticated shop — never trust query param shopId
+  const shopId = session.user.id;
 
   try {
     const messages = await prisma.message.findMany({
       where: { shopId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
       include: {
         customer: {
-          select: { phone: true }
-        }
-      }
+          select: { phone: true },
+        },
+      },
     });
 
     return NextResponse.json({ messages });
@@ -28,26 +31,42 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "shop") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
-    const { shopId, customerId, content } = body;
+    const { customerId, content } = body;
 
-    if (!shopId || !customerId || !content) {
+    // shopId always comes from session — never from request body
+    const shopId = session.user.id;
+
+    if (!customerId || !content?.trim()) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Verify the customer belongs to this shop before writing
+    const relationship = await prisma.shopCustomer.findUnique({
+      where: { shopId_customerId: { shopId, customerId } },
+    });
+    if (!relationship) {
+      return NextResponse.json({ error: "Customer not found in your shop" }, { status: 404 });
     }
 
     const message = await prisma.message.create({
       data: {
         shopId,
         customerId,
-        content,
-        isFromStore: true
+        content: content.trim(),
+        isFromStore: true,
       },
       include: {
         customer: {
-          select: { phone: true }
-        }
-      }
+          select: { phone: true },
+        },
+      },
     });
 
     return NextResponse.json({ message });

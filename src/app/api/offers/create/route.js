@@ -84,8 +84,8 @@ export async function POST(request) {
         try {
           const result = await sendOfferWithImage({
             phone: rec.phone || null,
-            offer: { ...offer, id: offer.id }, // Pass the offer object
-            shopName,
+            offer: { ...offer, id: offer.id },
+            storeName: shopName,
           });
           await prisma.offerRecipient.update({
             where: { id: rec.id },

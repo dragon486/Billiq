@@ -47,7 +47,6 @@ export async function notify({
     const isEmailEnabled = prefs ? prefs.emailEnabled : true;
     const isWhatsAppEnabled = prefs ? prefs.whatsappEnabled : true;
     const isPushEnabled = prefs ? prefs.pushEnabled : false;
-    const emailDigest = prefs ? prefs.emailDigest : "instant";
 
     // 3. CHANNEL: Push Notifications (Instant)
     if (isPushEnabled && channels.includes("push")) {
@@ -74,7 +73,7 @@ export async function notify({
     }
 
     // 4. CHANNEL: Email
-    if (isEmailEnabled && channels.includes("email") && emailDigest === "instant") {
+    if (isEmailEnabled && channels.includes("email")) {
       // Get user email based on type
       let targetEmail = "";
       if (userType === "customer") {

@@ -36,6 +36,12 @@ export async function POST(request) {
     });
 
     // 2. Process in batches of 10 to avoid rate limits / timeouts
+    // Fetch offer once to avoid N+1 queries inside the loop
+    const offerWithShop = await prisma.offer.findUnique({ where: { id: offerId }, include: { shop: true } });
+    if (!offerWithShop) {
+      return NextResponse.json({ error: "Offer not found" }, { status: 404 });
+    }
+
     let processed = 0;
     while (true) {
       const recipients = await prisma.offerRecipient.findMany({
@@ -47,11 +53,10 @@ export async function POST(request) {
 
       for (const recipient of recipients) {
         try {
-          const offer = await prisma.offer.findUnique({ where: { id: offerId }, include: { shop: true } });
           const result = await sendOfferWithImage({ 
             phone: recipient.phone, 
-            offer, 
-            storeName: offer.shop.name 
+            offer: offerWithShop, 
+            storeName: offerWithShop.shop.name 
           });
           if (result.success) {
             await prisma.offerRecipient.update({
